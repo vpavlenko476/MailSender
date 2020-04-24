@@ -7,6 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\contactAdd.png" />
+    <None Remove="Resources\contactEdit.png" />
+    <None Remove="Resources\contactRemove.png" />
+    <None Remove="Resources\shedulerAdd.png" />
+    <None Remove="Resources\smtpAdd.png" />
+    <None Remove="Resources\smtpEdit.png" />
+    <None Remove="Resources\smtpRemove.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AsyncAwaitBestPractices.MVVM" Version="4.1.0" />
     <PackageReference Include="CommonServiceLocator" Version="2.0.5" />
     <PackageReference Include="MaterialDesignColors" Version="1.2.3" />
@@ -17,6 +27,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MailSender.DAL\MailSender.DAL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\contactAdd.png" />
+    <Resource Include="Resources\contactEdit.png" />
+    <Resource Include="Resources\contactRemove.png" />
+    <Resource Include="Resources\shedulerAdd.png" />
+    <Resource Include="Resources\smtpAdd.png" />
+    <Resource Include="Resources\smtpEdit.png" />
+    <Resource Include="Resources\smtpRemove.png" />
   </ItemGroup>
 
 </Project>
