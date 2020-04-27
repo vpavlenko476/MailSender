@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MailSender.DAL\MailSender.DAL.csproj" />
+    <ProjectReference Include="..\MailSsender.Dal\MailSender.DAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>

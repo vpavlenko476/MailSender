@@ -21,6 +21,6 @@ namespace MailSender.UI.Views
 		public MailSenderMain()
 		{
 			InitializeComponent();
-		}
+		}		
 	}
 }
