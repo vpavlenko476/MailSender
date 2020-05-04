@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MailSender.UI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="760"
+        Title="MainWindow" Height="460" Width="760"
         xmlns:views="clr-namespace:MailSender.UI.Views">
     <Grid>
         <views:MailSenderMain/>

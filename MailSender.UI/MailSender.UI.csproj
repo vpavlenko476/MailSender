@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -7,13 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\contactAdd.png" />
     <None Remove="Resources\contactEdit.png" />
-    <None Remove="Resources\contactRemove.png" />
     <None Remove="Resources\shedulerAdd.png" />
-    <None Remove="Resources\smtpAdd.png" />
     <None Remove="Resources\smtpEdit.png" />
-    <None Remove="Resources\smtpRemove.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,22 +18,24 @@
     <PackageReference Include="CommonServiceLocator" Version="2.0.5" />
     <PackageReference Include="MaterialDesignColors" Version="1.2.3" />
     <PackageReference Include="MaterialDesignThemes" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.19" />
     <PackageReference Include="MvvmLight" Version="5.4.1.1" />
     <PackageReference Include="MvvmLightLibsStd10" Version="5.4.1.1" />
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MailSender.DAL\MailSender.DAL.csproj" />
+    <ProjectReference Include="..\MailSsender.Dal\MailSender.DAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\contactAdd.png" />
     <Resource Include="Resources\contactEdit.png" />
-    <Resource Include="Resources\contactRemove.png" />
     <Resource Include="Resources\shedulerAdd.png" />
-    <Resource Include="Resources\smtpAdd.png" />
     <Resource Include="Resources\smtpEdit.png" />
-    <Resource Include="Resources\smtpRemove.png" />
   </ItemGroup>
 
 </Project>

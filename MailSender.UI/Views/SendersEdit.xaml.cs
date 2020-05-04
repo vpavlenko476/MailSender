@@ -14,13 +14,13 @@ using System.Windows.Shapes;
 namespace MailSender.UI.Views
 {
 	/// <summary>
-	/// Interaction logic for MailSenderMain.xaml
+	/// Interaction logic for SendersEdit.xaml
 	/// </summary>
-	public partial class MailSenderMain : UserControl
+	public partial class SendersEdit : UserControl
 	{
-		public MailSenderMain()
+		public SendersEdit()
 		{
 			InitializeComponent();
-		}		
+		}
 	}
 }

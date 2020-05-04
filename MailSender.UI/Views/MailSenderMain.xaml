@@ -4,7 +4,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:rules="clr-namespace:MailSender.UI.ValidationRules"
              xmlns:local="clr-namespace:MailSender.UI.Views"
+             xmlns:i="clr-namespace:Microsoft.Xaml.Behaviors;assembly=Microsoft.Xaml.Behaviors"
+             xmlns:customBenavior="clr-namespace:MailSender.UI.Views.Behaviors"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -15,123 +18,138 @@
              Background="{DynamicResource MaterialDesignPaper}"
              FontFamily="{DynamicResource MaterialDesignFont}"
              DataContext="{Binding MailSenderVM, Source={StaticResource ViewModelLocator}}">
-    <UserControl.Resources>
-        <Image x:Key="addContact" Source="/Resources/contact_blue_add.png"/>
-    </UserControl.Resources>
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="691*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="25*"/>
-            <RowDefinition Height="100*"/>
-            <RowDefinition Height="61*"/>
-            <RowDefinition Height="49*"/>
-            <RowDefinition Height="241*"/>
-        </Grid.RowDefinitions>
+    <Grid>     
+              
 
-        <DockPanel Grid.Row="0">
-            <Menu>
-                <MenuItem Header="Файл" Height="25" FontSize="12"/>
-            </Menu> 
-        </DockPanel>
-
-        <TabControl Grid.Row="1">
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabControl}">
             <TabItem Header="Группа рассылки">
-                <ToolBarTray Height="65" VerticalAlignment="Top">                    
-                    <ToolBar Name="tbSender" Width="500" Height="30" >
-                        <DockPanel>
-                            <Label Content="Выбрать отправителя" Width="145" Height="25"></Label>
-                            <ComboBox Name="cbSenderSelect" Width="240" ToolTip="Выбрать email отправителя" Margin="0,0,2,0" >
-                                <ComboBoxItem Content="testEmail"></ComboBoxItem>
-                                <ComboBoxItem Content="testEmail"></ComboBoxItem>
-                            </ComboBox>
-                            <Button Background="{x:Null}" Height="25" Width="25" Foreground="{x:Null}" Margin="2,0,2,0" >
-                                <Image Source="/Resources/contactAdd.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                            <Button Width="25" Height="25" ToolTip="Редактировать" Name="btnEditSender" Background="{x:Null}" Foreground="{x:Null}" Margin="2,0,2,0">
-                                <Image Source="/Resources/contactEdit.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                            <Button Width="25" Height="25" ToolTip="Удалить" Name="btnDeleteSender" Background="{x:Null}" Foreground="{x:Null}" Margin="2,0,0,0">
-                                <Image Source="/Resources/contactRemove.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                        </DockPanel>
-                    </ToolBar>
-                    <ToolBar Name="tbSmtpServer" Width="500" Height="30" Band="1" BandIndex="0">
-                        <DockPanel>
-                            <Label Content="Выбрать smtp-server" Width="145" Height="25"></Label>
-                            <ComboBox Name="cbSmtpSelect" Width="240" ToolTip="Выбрать smtp-server" Margin="0,0,2,0" >
-                                <ComboBoxItem Content="testSmtp"></ComboBoxItem>
-                                <ComboBoxItem Content="testSmtp"></ComboBoxItem>
-                            </ComboBox>
-                            <Button Name="btnAddSmtp" Background="{x:Null}" Height="25" Width="25" Foreground="{x:Null}" Margin="2,0,2,0" >
-                                <Image Source="/Resources/smtpAdd.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                            <Button Name="btnEditSmtp" Width="25" Height="25" ToolTip="Редактировать"  Background="{x:Null}" Foreground="{x:Null}" Margin="2,0,2,0">
-                                <Image Source="/Resources/smtpEdit.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                            <Button Name="btnDeleteSmtp" Width="25" Height="25" ToolTip="Удалить"  Background="{x:Null}" Foreground="{x:Null}" Margin="2,0,0,0">
-                                <Image Source="/Resources/smtpRemove.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                        </DockPanel>
-                    </ToolBar>
-                    
-                    <ToolBar Name="tbSheduler" Height="30" Band="0" BandIndex="1">
-                        <DockPanel>
-                            <Label Content="Перейти в планировщику" Height="25"/>
-                            <Button Name="btnSheduler" Width="25" Height="25" ToolTip="Удалить"  Background="{x:Null}" Foreground="{x:Null}" Margin="16,0,0,0">
-                                <Image Source="/Resources/shedulerAdd.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                        </DockPanel>
-                    </ToolBar>
+                <StackPanel>
+                    <ToolBarTray Height="65" VerticalAlignment="Top">
+                        <ToolBar Name="tbSender" Width="400" Height="30" >
+                            <DockPanel>
+                                <ComboBox
+                                     materialDesign:HintAssist.Hint="Отправитель"
+                                     IsEditable="True"
+                                     materialDesign:HintAssist.HintOpacity=".26"
+                                    Name="cbSenderSelect" Width="300" ToolTip="Выбрать email отправителя" Margin="0,0,2,0" ItemsSource="{Binding SendersEmails, AsyncState=True, Mode=OneWay}" SelectedItem="{Binding SenderEmail}">
+                                </ComboBox>
+                                <Button Command="{Binding OpenSendersEditWindowCommand}" Width="25" Height="25" ToolTip="Редактировать" Name="btnEditSender" Background="{x:Null}" Foreground="{x:Null}" Margin="10,0,2,0">
+                                    <Image Source="/Resources/contactEdit.png" Margin="-10,0,-2,0" ></Image>
+                                </Button>
+                            </DockPanel>
+                        </ToolBar>
+                        <ToolBar Name="tbSmtpServer" Width="400" Height="30" Band="1" BandIndex="0">
+                            <DockPanel>
+                                <ComboBox
+                                    materialDesign:HintAssist.Hint="Smtp-server"
+                                     IsEditable="True"
+                                     materialDesign:HintAssist.HintOpacity=".26"
+                                    Name="cbSmtpSelect" Width="300" ToolTip="Выбрать smtp-server" Margin="0,0,2,0" ItemsSource="{Binding SmtpServers}" SelectedItem="{Binding SmtpServer}"/>
+                                <Button Command="{Binding OpenSmtpEditWindowCommand}" Name="btnEditSmtp" Width="25" Height="25" ToolTip="Редактировать"  Background="{x:Null}" Foreground="{x:Null}" Margin="10,0,2,0">
+                                    <Image Source="/Resources/smtpEdit.png" Margin="-10,0,-2,0" ></Image>
+                                </Button>
+                            </DockPanel>
+                        </ToolBar>
 
-                    <ToolBar Name="tbDestination" Height="30" Band="1" BandIndex="1">
-                        <DockPanel>
-                            <Label Content="Список адресатов" Height="25"></Label>                            
-                            <Button Background="{x:Null}" Height="25" Width="25" Foreground="{x:Null}" Margin="2,0,2,0" >
-                                <Image Source="/Resources/contactAdd.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                            <Button Width="25" Height="25" ToolTip="Редактировать" Name="btnEditDestination" Background="{x:Null}" Foreground="{x:Null}" Margin="2,0,2,0">
-                                <Image Source="/Resources/contactEdit.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                            <Button Width="25" Height="25" ToolTip="Удалить" Name="btnDeleteDestination" Background="{x:Null}" Foreground="{x:Null}" Margin="2,0,0,0">
-                                <Image Source="/Resources/contactRemove.png" Margin="-10,0,-2,0" ></Image>
-                            </Button>
-                        </DockPanel>
-                    </ToolBar>
+                        <ToolBar Name="tbSheduler" Height="30" Band="0" BandIndex="1">
+                            <DockPanel>
+                                <Label Content="Перейти в планировщику" Height="25"/>
+                                <Button Name="btnSheduler" Command="{Binding OpenScheduler}" Width="25" Height="25" ToolTip="Удалить"  Background="{x:Null}" Foreground="{x:Null}" Margin="10,0,0,0">
+                                    <Image Source="/Resources/shedulerAdd.png" Margin="-10,0,-2,0" ></Image>
+                                </Button>
+                            </DockPanel>
+                        </ToolBar>
 
-                </ToolBarTray>
+                        <ToolBar Name="tbDestination" Height="30" Band="1" BandIndex="1">
+                            <DockPanel>
+                                <Label Content="Список адресатов" Height="25"/>
+                                <Button Command ="{Binding OpenRecipientEditWindowCommand}" Width="25" Height="25" ToolTip="Редактировать" Name="btnEditDestination" Background="{x:Null}" Foreground="{x:Null}" Margin="10,0,2,0">
+                                    <Image Source="/Resources/contactEdit.png" Margin="-10,0,-2,0" ></Image>
+                                </Button>
+                            </DockPanel>
+                        </ToolBar>
+
+
+                    </ToolBarTray>
+                    <TextBox AcceptsReturn="False" materialDesign:HintAssist.Hint="Поиск" Margin="0,5,0,0" Text="{Binding SearchField,UpdateSourceTrigger=PropertyChanged, Delay=1000}">
+
+                    </TextBox>
+
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Recipients}" IsReadOnly="True">
+                        <i:Interaction.Behaviors>
+                            <customBenavior:MultiSelectBehavior SelectedItems="{Binding Email}" />
+                        </i:Interaction.Behaviors>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="Auto"/>
+                            <DataGridTextColumn Header="Почта" Binding="{Binding Email}" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>                    
+                </StackPanel>
             </TabItem>
-            <TabItem Header="Планировщик">test       
+            <TabItem Header="Планировщик">
+                <StackPanel>
+                    <Viewbox Name="vbSchedul" Width="250" Height="280" HorizontalAlignment="Left">
+                        <Calendar Name ="cldSchedulDateTimes">
+                            <Calendar.SelectedDate>
+                                <Binding Path="SendDate" NotifyOnValidationError="True" ValidatesOnDataErrors="True" UpdateSourceTrigger="PropertyChanged">
+                                    <Binding.ValidationRules>
+                                        <ExceptionValidationRule/>
+                                        <rules:SendDate/>
+                                    </Binding.ValidationRules>
+                                </Binding>
+                            </Calendar.SelectedDate>
+                        </Calendar>
+                    </Viewbox>
+                    <materialDesign:TimePicker Width="220" HorizontalAlignment="Left" Margin="2,0,0,2" SelectedTime="{Binding SendTime}"/>
+                    <Button Command="{Binding SendEmailShedullerCommand}" Width="220" HorizontalAlignment="Left" Margin="0,2,0,2" 
+                            Style="{StaticResource MaterialDesignFlatButton}">
+                        Отправить запланированно
+                    </Button>
+                    <Button Width="220" HorizontalAlignment="Left" Margin="0,2,0,2" Command="{Binding SendEmailNowCommand}"
+                            Style="{StaticResource MaterialDesignFlatButton}">
+                        Отправить сразу
+                    </Button>
+                </StackPanel>
+
+
             </TabItem>
-            <TabItem Header="Редактор писем">Test</TabItem>
-            <TabItem Header="Статистика">Test</TabItem>
+            <TabItem Header="Редактор писем">
+                <StackPanel>
+                    <TextBox Name="Title" 
+                    Style="{StaticResource MaterialDesignOutlinedTextFieldTextBox}"
+                        Height="37"
+                        materialDesign:HintAssist.Hint="Заголовок" Margin="10,10,10,10">
+                        <TextBox.Text>
+                            <Binding Path="MessageTitle" NotifyOnValidationError="True" ValidatesOnDataErrors="True" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <ExceptionValidationRule/>
+                                    <rules:Message/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+                    <TextBox                        
+                        Style="{StaticResource MaterialDesignOutlinedTextFieldTextBox}"                      
+                        VerticalAlignment="Top"
+                        Height="100"
+                        AcceptsReturn="True"
+                        TextWrapping="Wrap"
+                        VerticalScrollBarVisibility="Auto"
+                        materialDesign:HintAssist.Hint="Текст письма" Margin="10,10,10,10">
+                        <TextBox.Text>
+                            <Binding Path="Message" NotifyOnValidationError="True" ValidatesOnDataErrors="True" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <ExceptionValidationRule/>
+                                    <rules:Message/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Статистика">Test</TabItem>            
         </TabControl>
-
-        <TextBox  Name="Title" Grid.Row="2" 
-            Style="{StaticResource MaterialDesignOutlinedTextFieldTextBox}"                      
-            materialDesign:HintAssist.FloatingScale="1"          
-            materialDesign:HintAssist.IsFloating="True" 
-            HorizontalAlignment="Left"
-            VerticalAlignment="Center" FontSize="12"  Padding="-10,-8,-10,-10" Text="{Binding MessageTitle}" Height="32" Margin="10,0,0,0">
-            <materialDesign:HintAssist.Hint>
-                <StackPanel Orientation="Horizontal" Height="20" >
-                    <TextBlock>Заголовок</TextBlock>
-                </StackPanel>
-            </materialDesign:HintAssist.Hint>
-        </TextBox>
-        
-        <TextBox  Name="Body" Grid.Row="3" 
-            Style="{StaticResource MaterialDesignOutlinedTextFieldTextBox}"                      
-            materialDesign:HintAssist.FloatingScale="1"          
-            materialDesign:HintAssist.IsFloating="True" 
-            HorizontalAlignment="Left"
-            VerticalAlignment="Center" FontSize="12"  Padding="-10,-8,-10,-10" Text="{Binding MessageBody}" Height="32" Margin="10,0,0,0">
-            <materialDesign:HintAssist.Hint>
-                <StackPanel Orientation="Horizontal" Height="20" >
-                    <TextBlock Margin="0,0,10,0">Сообщение</TextBlock>
-                </StackPanel>
-            </materialDesign:HintAssist.Hint>
-        </TextBox>
+        <materialDesign:Snackbar MessageQueue="{Binding MyMessageQueue}">           
+        </materialDesign:Snackbar>
     </Grid>
 </UserControl>
