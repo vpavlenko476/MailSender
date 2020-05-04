@@ -17,13 +17,13 @@
         {
             var senders = new List<Models.Sender>()
             {
-                new Models.Sender(){Email="test@test.ru", Password="testPass"}
+                new Models.Sender(){Email="nox1001@yandex.ru", Password="17BB18cc2::6dd"}
             };
             senders.ForEach(x => context.Senders.AddOrUpdate(c => new { c.Email, c.Password }, x));
 
             var recipients = new List<Models.Recipient>()
             {
-                new Models.Recipient(){Name = "test", Email="test@test.ru"}
+                new Models.Recipient(){Name = "test", Email="nox1001@yandex.ru"}
             };
             recipients.ForEach(x => context.Recipients.AddOrUpdate(c => new { c.Name, c.Email}, x));
 

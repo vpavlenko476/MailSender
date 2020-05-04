@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace MailSender.DAL.Repos
 {
-	public class BaseRepo<T> : IRepo<T>, IDisposable
+	public class BaseRepo<T> : IBaseRepo<T>, IDisposable
 		where T : EntityBase, new()
 	{
 		private readonly MailSenderContext _db;

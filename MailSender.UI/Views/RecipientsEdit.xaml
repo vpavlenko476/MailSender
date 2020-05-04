@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="MailSender.UI.Views.RecipientEdit"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:rules="clr-namespace:MailSender.UI.ValidationRules"
+             xmlns:local="clr-namespace:MailSender.UI.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+             TextElement.FontWeight="Regular"
+             TextElement.FontSize="13"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"             
+             Background="{DynamicResource MaterialDesignPaper}"
+             FontFamily="{DynamicResource MaterialDesignFont}"
+             DataContext="{Binding RecipientsVM, Source={StaticResource ViewModelLocator}}">
+    <DockPanel>
+        <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Recipients, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedRecipient}" Width="280">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="Auto"/>
+                <DataGridTextColumn Header="Почта" Binding="{Binding Email}" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel>
+            <GroupBox Header="Добавить получателя" BorderThickness="5">
+                <StackPanel>
+                    <TextBox materialDesign:HintAssist.Hint="Имя" Text="{Binding NameToCreate}" Margin="0,0,0,10"/>
+                    <TextBox materialDesign:HintAssist.Hint="Почта" Margin="0,10,0,10">
+                        <TextBox.Text>
+                            <Binding Path="EmailToCreate" NotifyOnValidationError="True" ValidatesOnDataErrors="True" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <ExceptionValidationRule/>
+                                    <rules:EmailAddress/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+
+                    <Button Margin="0,10,0,5" Height="25" Style="{StaticResource MaterialDesignFlatButton}" Content="Создать" FontSize="11" Command="{Binding AddRecipientCommand}"/>
+                </StackPanel>
+            </GroupBox>
+
+            <Button Margin="0,5,0,5" Height="25" Style="{StaticResource MaterialDesignFlatButton}" Content="Редактировать" FontSize="11" Command="{Binding EditRecipientCommand}"/>
+            <Button Margin="0,5,0,5" Height="25" 
+                    Style="{StaticResource MaterialDesignFlatButton}" Content="Удалить" FontSize="11" Command="{Binding DeleteRecipientCommand}"/>
+        </StackPanel>
+    </DockPanel>
+</UserControl>

@@ -1,5 +1,6 @@
 ﻿using MailSender.DAL.Models.Base;
 using System;
+using System.Collections.Generic;
 
 namespace MailSender.DAL.Models
 {
@@ -17,5 +18,15 @@ namespace MailSender.DAL.Models
 		/// Зашифрованный пароль
 		/// </summary>
 		public string Password { get; set; }
+
+		/// <summary>
+		/// Сообщение
+		/// </summary>
+		public virtual ICollection<Message> Messages { get; set; }
+
+		public override string ToString()
+		{
+			return Email;
+		}
 	}
 }

@@ -1,10 +1,16 @@
 ﻿using AsyncAwaitBestPractices.MVVM;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using GalaSoft.MvvmLight.Messaging;
+using MailSender.DAL.Exceptions;
 using MailSender.DAL.Models;
 using MailSender.DAL.Repos;
 using MailSender.DAL.Services;
+using MailSender.UI.Views.Behaviors;
+using MailSender.UI.Views.Services;
+using MaterialDesignThemes.Wpf;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Linq;
@@ -15,27 +21,62 @@ namespace MailSender.UI.ViewModel
 {
 	public class MailSenderVM : ViewModelBase
 	{
+		private IWindowService windowService;
 		private IAsyncCommand _sendEmailCommand;
 		private IAsyncCommand _sendShedullerCommand;
-		private EmailSendService _emailSendService;
+		private IEmailSendService _emailSendService;
 		private string _messageBody;
 		private string _messageTitle;
-		private bool _isBusy;		
+		private bool _isBusy;
 		private int selectedTabControl = 0;
 		private RelayCommand _openScheduler;
 		private string _senderEmail;
+		private ObservableCollection<string> _smtpServers;
 		private Recipient _recipientEmail;
 		private string _smtpServer;
 		private DateTime _sendTime;
 		private DateTime _sendDate;
-
-		public MailSenderVM()
+		private string _searchField;
+		private ObservableCollection<Recipient> _recipients;
+		private ObservableCollection<Sender> _senders;
+		private ObservableCollection<string> _sendersEmails;
+		private RelayCommand _openSendersEditWindowCommand;
+		private RelayCommand _openSmtpEditWindowCommand;
+		private RelayCommand _openRecipientEditWindowCommand;
+		private bool _snackBarActive;
+		private string _snackBarMessage;
+		private SnackbarMessageQueue _snackBarMessageQueue;
+		public MailSenderVM(IEmailSendService emailService, IWindowService openWindowService)
 		{
-			_emailSendService = new EmailSendService();
+			_emailSendService = emailService;
+			windowService = openWindowService;
+			Messenger.Default.Register<Sender>(this, x => EditSendersList(x));
+			Messenger.Default.Register<Host>(this, x => EditHostList(x));
+			Messenger.Default.Register<Recipient>(this, x => EditRecipientList(x));
+			MyMessageQueue = new SnackbarMessageQueue(new TimeSpan(0, 0, 3));
+		}
+
+		public SnackbarMessageQueue MyMessageQueue
+		{
+			get { return _snackBarMessageQueue; }
+			set { Set(ref _snackBarMessageQueue, value); }
 		}
 
 		/// <summary>
-		/// Текст письма
+		/// Строка поиска
+		/// </summary>
+		public string SearchField
+		{
+			get { return _searchField; }
+			set
+			{
+				Set(ref _searchField, value);
+				SerarchRecipient();
+			}
+		}
+
+		/// <summary>
+		/// Сообщение
 		/// </summary>
 		public string Message
 		{
@@ -103,6 +144,9 @@ namespace MailSender.UI.ViewModel
 			set { Set(ref _sendTime, value); }
 		}
 
+		/// <summary>
+		/// Дата запланированной отправки
+		/// </summary>
 		public DateTime SendDate
 		{
 			get { return _sendDate; }
@@ -127,6 +171,7 @@ namespace MailSender.UI.ViewModel
 			set { Set(ref _isBusy, value); }
 		}
 
+
 		/// <summary>
 		/// Список эл.почт отправителей
 		/// </summary>
@@ -136,22 +181,38 @@ namespace MailSender.UI.ViewModel
 			{
 				using (var sender = new BaseRepo<Sender>())
 				{
-					return new ObservableCollection<string>(sender.GetAll().Select(x => x.Email));
+					if (_sendersEmails == null)
+					{
+						_sendersEmails = new ObservableCollection<string>(sender.GetAll().Select(x => x.Email));
+					}
+					return _sendersEmails;
 				}
+			}
+			set
+			{
+				Set(ref _sendersEmails, value);
 			}
 		}
 
 		/// <summary>
-		/// Список эл.почт получателей
+		/// Список получателей
 		/// </summary>
-		public ObservableCollection<Recipient> RecipientsEmails
+		public ObservableCollection<Recipient> Recipients
 		{
 			get
 			{
 				using (var recipient = new BaseRepo<Recipient>())
 				{
-					return new ObservableCollection<Recipient>(recipient.GetAll());
+					if (_recipients == null)
+					{
+						_recipients = new ObservableCollection<Recipient>(recipient.GetAll());
+					}
+					return _recipients;
 				}
+			}
+			set
+			{
+				{ Set(ref _recipients, value); }
 			}
 		}
 
@@ -162,10 +223,18 @@ namespace MailSender.UI.ViewModel
 		{
 			get
 			{
-				using (var hosts = new BaseRepo<Host>())
+				if (_smtpServers == null)
 				{
-					return new ObservableCollection<string>(hosts.GetAll().Select(x => x.Server));
+					using (var hosts = new BaseRepo<Host>())
+					{
+						_smtpServers = new ObservableCollection<string>(hosts.GetAll().Select(x => x.Server));
+					}
 				}
+				return _smtpServers;
+			}
+			set
+			{
+				{ Set(ref _smtpServers, value); }
 			}
 		}
 
@@ -204,32 +273,138 @@ namespace MailSender.UI.ViewModel
 				}));
 			}
 		}
-		
+
+		// TODO: Вынести обращение к бд из метода, в методе оставить работу с имеющейся коллекцией
+		public void SerarchRecipient()
+		{
+			if (!string.IsNullOrWhiteSpace(_searchField))
+			{
+				using (var recipient = new BaseRepo<Recipient>())
+				{
+					Recipients = new ObservableCollection<Recipient>(recipient.GetAll().Where(x => x.Email.Contains(_searchField)));
+				}
+			}
+		}
+
+
 		public async Task SendEmailShedullerAsync()
 		{
 			IsBusy = true;
-			if (!(string.IsNullOrEmpty(_messageBody) || string.IsNullOrEmpty(_messageTitle)))
+			var messages = new List<MailMessage>();
+			var recipients = new MultiSelectBehavior();
+			foreach (var rec in recipients.SelectedItems)
+			{
+				messages.Add(new MailMessage(_senderEmail, rec) { Body = _messageBody, Subject = _messageTitle, IsBodyHtml = false });
+			}
+			try
 			{
 				await Task.Run(() => _emailSendService.SendEmailScheduler(
 					 SmtpServer,
-					 new MailMessage(_senderEmail, _recipientEmail.Email) { Body = _messageBody, Subject = _messageTitle, IsBodyHtml = false },
-					 _sendDate,
-					 _sendTime));
+					  messages,
+					 SendDate,
+					 SendTime));
+				MyMessageQueue.Enqueue($"Письмо будет отправлено {SendDate.ToShortDateString()} в {SendTime.ToShortTimeString()}");
 			}
+			catch (EmailSendServiceException ex)
+			{
+				MyMessageQueue.Enqueue(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				windowService.showWindow(new WarningsVW());
+				Messenger.Default.Send(ex);
+			}
+
 			IsBusy = false;
 		}
-		
+
 		public async Task SendEmailNowAsync()
 		{
 			IsBusy = true;
 
-			if (!(string.IsNullOrEmpty(_messageBody) || string.IsNullOrEmpty(_messageTitle)))
+			var messages = new List<MailMessage>();
+			var recipients = new MultiSelectBehavior();
+			foreach (var rec in recipients.SelectedItems)
 			{
-				await _emailSendService.SendEmailNow(
-					   SmtpServer,
-					   new MailMessage(_senderEmail, _recipientEmail.Email) { Body = _messageBody, Subject = _messageTitle, IsBodyHtml = false });
+				messages.Add(new MailMessage(_senderEmail, rec) { Body = _messageBody, Subject = _messageTitle, IsBodyHtml = false });
 			}
+
+			try
+			{
+				await Task.Run(() => _emailSendService.SendEmailNow(
+					 SmtpServer,
+					  messages));
+				MyMessageQueue.Enqueue("Письмо отправлено");
+			}
+			catch (EmailSendServiceException ex)
+			{
+				MyMessageQueue.Enqueue(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				windowService.showWindow(new WarningsVW());
+				Messenger.Default.Send(ex);
+			}
+
 			IsBusy = false;
+		}
+
+		public RelayCommand OpenSendersEditWindowCommand => _openSendersEditWindowCommand ?? (_openSendersEditWindowCommand = new RelayCommand
+			(() => windowService.showWindow(new SendersVM())));
+
+		public RelayCommand OpenSmtpEditWindowCommand => _openSmtpEditWindowCommand ?? (_openSmtpEditWindowCommand = new RelayCommand
+		(() => windowService.showWindow(new SmtpVM())));
+
+		public RelayCommand OpenRecipientEditWindowCommand => _openRecipientEditWindowCommand ?? (_openRecipientEditWindowCommand = new RelayCommand
+		(() => windowService.showWindow(new RecipientsVM())));
+
+		public void EditSendersList(Sender editedSender)
+		{
+			using (var dbSender = new BaseRepo<Sender>())
+			{
+				SendersEmails = new ObservableCollection<string>(dbSender.GetAll().Select(x => x.Email));
+			}
+
+			//if (_senders == null)
+			//{
+			//	using (var dbSender = new BaseRepo<Sender>())
+			//	{
+			//		_senders = new ObservableCollection<Sender>(dbSender.GetAll());
+			//	}
+			//}
+
+			//var edited = _senders.Where(x => x.Id == editedSender.Id).FirstOrDefault();
+			//var deleted = _senders.Where(x => Equals(x, editedSender)).FirstOrDefault();
+			//if (edited != null)
+			//{
+			//	_senders.Remove(edited);
+			//	_senders.Add(editedSender);
+			//}
+			//else if(deleted!=null)
+			//{
+			//	_senders.Remove(deleted);
+			//}
+			//else
+			//{
+			//	_senders.Add(editedSender);
+			//}			
+			//_sendersEmails = new ObservableCollection<string>(_senders.Select(x => x.Email));
+			//SendersEmails = _sendersEmails;			
+		}
+
+		public void EditHostList(Host editedHost)
+		{
+			using (var dbHost = new BaseRepo<Host>())
+			{
+				SmtpServers = new ObservableCollection<string>(dbHost.GetAll().Select(x => x.Server));
+			}
+		}
+		public void EditRecipientList(Recipient editedRecipient)
+		{
+			using (var dbRecipient = new BaseRepo<Recipient>())
+			{
+				Recipients = new ObservableCollection<Recipient>(dbRecipient.GetAll());
+			}
 		}
 	}
 }

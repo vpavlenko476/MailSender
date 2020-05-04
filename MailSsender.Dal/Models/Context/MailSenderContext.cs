@@ -14,5 +14,11 @@ namespace MailSender.DAL.Models.Context
 
 		///<inheritdoc cref="MailSender.DAL.Models.Host"/>
 		public DbSet<Host> Hosts { get; set; }
+
+		///<inheritdoc cref="MailSender.DAL.Models.Message"/>
+		public DbSet<Message> Messages { get; set; }
+
+		///<inheritdoc cref="MailSender.DAL.Models.RecipientMessage"/>
+		public DbSet<RecipientMessage> RecipientMessages { get; set; }
 	}
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MailSender.DAL.Repos
 {
-	interface IRepo<T>
+	interface IBaseRepo<T>
 	{
 		int Add(T entity);
 		int AddRandge(IList<T> entites);

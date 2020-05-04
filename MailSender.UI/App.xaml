@@ -3,13 +3,26 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:MailSender.UI.ViewModel"
              xmlns:vw="clr-namespace:MailSender.UI.Views"
+             xmlns:smtp="clr-namespace:MailSender.UI.Views.Senders"
              xmlns:local="clr-namespace:MailSender.UI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <DataTemplate DataType="{x:Type vm:MailSenderVM}">
                 <vw:MailSenderMain/>
-            </DataTemplate>     
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SendersVM}">
+                <vw:SendersEdit/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SmtpVM}">
+                <smtp:SmtpEdit/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:RecipientsVM}">
+                <vw:RecipientEdit/>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:WarningsVW}">
+                <vw:Warning/>
+            </DataTemplate>
             <local:ViewModelLocator x:Key="ViewModelLocator"/>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml" />
