@@ -18,9 +18,7 @@
              Background="{DynamicResource MaterialDesignPaper}"
              FontFamily="{DynamicResource MaterialDesignFont}"
              DataContext="{Binding MailSenderVM, Source={StaticResource ViewModelLocator}}">
-    <Grid>     
-              
-
+    <Grid>  
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabControl}">
             <TabItem Header="Группа рассылки">
                 <StackPanel>

@@ -42,13 +42,11 @@ namespace MailSender.UI.ViewModel
 		private ObservableCollection<string> _sendersEmails;
 		private RelayCommand _openSendersEditWindowCommand;
 		private RelayCommand _openSmtpEditWindowCommand;
-		private RelayCommand _openRecipientEditWindowCommand;
-		private bool _snackBarActive;
-		private string _snackBarMessage;
+		private RelayCommand _openRecipientEditWindowCommand;		
 		private SnackbarMessageQueue _snackBarMessageQueue;
-		public MailSenderVM(IEmailSendService emailService, IWindowService openWindowService)
+		public MailSenderVM( IEmailSendService service, IWindowService openWindowService)
 		{
-			_emailSendService = emailService;
+			_emailSendService = service;
 			windowService = openWindowService;
 			Messenger.Default.Register<Sender>(this, x => EditSendersList(x));
 			Messenger.Default.Register<Host>(this, x => EditHostList(x));
@@ -290,17 +288,12 @@ namespace MailSender.UI.ViewModel
 		public async Task SendEmailShedullerAsync()
 		{
 			IsBusy = true;
-			var messages = new List<MailMessage>();
-			var recipients = new MultiSelectBehavior();
-			foreach (var rec in recipients.SelectedItems)
-			{
-				messages.Add(new MailMessage(_senderEmail, rec) { Body = _messageBody, Subject = _messageTitle, IsBodyHtml = false });
-			}
+			var messages = GetMessages();
 			try
 			{
 				await Task.Run(() => _emailSendService.SendEmailScheduler(
 					 SmtpServer,
-					  messages,
+					 messages,
 					 SendDate,
 					 SendTime));
 				MyMessageQueue.Enqueue($"Письмо будет отправлено {SendDate.ToShortDateString()} в {SendTime.ToShortTimeString()}");
@@ -322,15 +315,10 @@ namespace MailSender.UI.ViewModel
 		{
 			IsBusy = true;
 
-			var messages = new List<MailMessage>();
-			var recipients = new MultiSelectBehavior();
-			foreach (var rec in recipients.SelectedItems)
-			{
-				messages.Add(new MailMessage(_senderEmail, rec) { Body = _messageBody, Subject = _messageTitle, IsBodyHtml = false });
-			}
+			var messages = GetMessages();
 
 			try
-			{
+			{				
 				await Task.Run(() => _emailSendService.SendEmailNow(
 					 SmtpServer,
 					  messages));
@@ -347,6 +335,22 @@ namespace MailSender.UI.ViewModel
 			}
 
 			IsBusy = false;
+		}
+
+		private IEnumerable<MailMessage> GetMessages()
+		{
+			var messages = new List<MailMessage>();
+			var recipients = new MultiSelectBehavior();
+			foreach (var recipient in recipients.SelectedItems)
+			{
+				messages.Add(new MailMessage(SenderEmail, recipient)
+				{
+					Body = _messageBody,
+					Subject = _messageTitle,
+					IsBodyHtml = false
+				});
+			}
+			return messages;
 		}
 
 		public RelayCommand OpenSendersEditWindowCommand => _openSendersEditWindowCommand ?? (_openSendersEditWindowCommand = new RelayCommand
