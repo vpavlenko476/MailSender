@@ -42,9 +42,9 @@ namespace MailSender.UI.ViewModel
 		private ObservableCollection<string> _sendersEmails;
 		private RelayCommand _openSendersEditWindowCommand;
 		private RelayCommand _openSmtpEditWindowCommand;
-		private RelayCommand _openRecipientEditWindowCommand;		
+		private RelayCommand _openRecipientEditWindowCommand;
 		private SnackbarMessageQueue _snackBarMessageQueue;
-		public MailSenderVM( IEmailSendService service, IWindowService openWindowService)
+		public MailSenderVM(IEmailSendService service, IWindowService openWindowService)
 		{
 			_emailSendService = service;
 			windowService = openWindowService;
@@ -318,10 +318,8 @@ namespace MailSender.UI.ViewModel
 			var messages = GetMessages();
 
 			try
-			{				
-				await Task.Run(() => _emailSendService.SendEmailNow(
-					 SmtpServer,
-					  messages));
+			{
+				await _emailSendService.SendEmailNow(SmtpServer, messages);
 				MyMessageQueue.Enqueue("Письмо отправлено");
 			}
 			catch (EmailSendServiceException ex)

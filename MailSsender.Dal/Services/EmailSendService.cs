@@ -85,10 +85,12 @@ namespace MailSender.DAL.Services
 				throw ex;
 			}
 			var timer = new System.Timers.Timer(60000);
-			var sendDateTime = date.Add(TimeSpan.Parse(time.ToString("HH:mm")));
+			var sendDateTime = date.Add(TimeSpan.Parse(time.ToString("HH:mm")));			
 			timer.Elapsed += async (sender, args) => await OnTimeoutAsync(sender, smtpServer, mailMessages, sendDateTime);
 			timer.Enabled = true;
 		}
+
+		
 
 		private async Task OnTimeoutAsync(Object source, string smtpServer, IEnumerable<MailMessage> mailMessages, DateTime sendDateTime)
 		{

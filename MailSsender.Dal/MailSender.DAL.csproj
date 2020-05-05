@@ -5,12 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EntityFramework" Version="6.4.0" />
-    <PackageReference Include="System.Collections" Version="4.3.0" />
+    <Compile Remove="EF\**" />
+    <EmbeddedResource Remove="EF\**" />
+    <None Remove="EF\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="EF\" />
+    <PackageReference Include="EntityFramework" Version="6.4.0" />
+    <PackageReference Include="System.Collections" Version="4.3.0" />
   </ItemGroup>
 
 </Project>
