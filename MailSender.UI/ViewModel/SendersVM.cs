@@ -1,15 +1,11 @@
 ﻿using AsyncAwaitBestPractices.MVVM;
+using Domain;
 using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.Command;
 using GalaSoft.MvvmLight.Messaging;
-using MailSender.DAL.Models;
-using MailSender.DAL.Repos;
-using MailSender.DAL.Services;
-using System;
-using System.Collections.Generic;
+using Services;
+using Services.Abstract;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -17,6 +13,7 @@ namespace MailSender.UI.ViewModel
 {
 	public class SendersVM : ViewModelBase
 	{
+		private ISenderService _senderService;
 		private ObservableCollection<Sender> _senders;
 		private string _senderEmail;
 		private string _senderPassword;
@@ -24,9 +21,9 @@ namespace MailSender.UI.ViewModel
 		private IAsyncCommand _addSender;
 		private IAsyncCommand _editSender;
 		private IAsyncCommand _deleteSender;
-		public SendersVM()
+		public SendersVM(ISenderService service)
 		{
-
+			_senderService = service;
 		}
 
 		/// <summary>
@@ -43,9 +40,9 @@ namespace MailSender.UI.ViewModel
 		public string SenderEmail
 		{
 			get { return _senderEmail; }
-			set 
+			set
 			{
-				if(Regex.IsMatch(value, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
+				if (Regex.IsMatch(value, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
 				{
 					Set(ref _senderEmail, value);
 				}
@@ -59,9 +56,9 @@ namespace MailSender.UI.ViewModel
 		public string SenderPassword
 		{
 			get { return _senderPassword; }
-			set 
-			{ 
-				if(!string.IsNullOrEmpty(value))
+			set
+			{
+				if (!string.IsNullOrEmpty(value))
 				{
 					Set(ref _senderPassword, value);
 				}
@@ -73,16 +70,16 @@ namespace MailSender.UI.ViewModel
 		{
 			get
 			{
-				using (var dbSender = new BaseRepo<Sender>())
+				if (_senders == null)
 				{
-					return _senders ?? (_senders = new ObservableCollection<Sender>(dbSender.GetAll().Select(x => x = new Sender()
+					_senders = new ObservableCollection<Sender>(_senderService.GetAll().Select(x => x = new Sender()
 					{
 						Id = x.Id,
 						Email = x.Email,
-						Password = PasswordCoding.Decrypt(x.Password),
-						Messages = x.Messages
-					})));
+						Password = PasswordCoding.Decrypt(x.Password)
+					}));
 				}
+				return _senders;
 			}
 			set
 			{
@@ -125,54 +122,49 @@ namespace MailSender.UI.ViewModel
 
 		private async Task AddSender()
 		{
-			if(SenderEmail!=null && SenderPassword!=null)
+			if (SenderEmail != null && SenderPassword != null)
 			{
-				using (var dbSender = new BaseRepo<Sender>())
+				var newSender = new Sender() { Email = SenderEmail, Password = PasswordCoding.Encrypt(SenderPassword) };
+				_senderService.Add(newSender);
+				Senders = new ObservableCollection<Sender>(new ObservableCollection<Sender>(_senderService.GetAll().Select(x => x = new Sender()
 				{
-					var newSender = new Sender() { Email = SenderEmail, Password = PasswordCoding.Encrypt(SenderPassword) };
-					dbSender.Add(newSender);
-					Senders.Add(new Sender() { Email = SenderEmail, Password = SenderPassword });
-					Messenger.Default.Send(newSender);					
-				}
-			}			
+					Id = x.Id,
+					Email = x.Email,
+					Password = PasswordCoding.Decrypt(x.Password)
+				})));
+				Messenger.Default.Send(newSender);
+			}
 		}
 
 		private async Task EditSender()
 		{
-			if (SelectedSender!=null)
+			if (SelectedSender != null)
 			{
-				using (var dbSender = new BaseRepo<Sender>())
+				_senderService.Edit(new Sender()
 				{
-					dbSender.Save(new Sender()
-					{
-						Id = SelectedSender.Id,
-						Email = SelectedSender.Email,
-						Password = PasswordCoding.Encrypt(SelectedSender.Password),
-						Messages = SelectedSender.Messages,
-					});
-					Senders = new ObservableCollection<Sender>(dbSender.GetAll().Select(x => new Sender()
-					{
-						Id = x.Id,
-						Email = x.Email,
-						Password = PasswordCoding.Decrypt(x.Password),
-						Messages = x.Messages
-					}));
-					Messenger.Default.Send(SelectedSender);
-				}
-			}			
+					Id = SelectedSender.Id,
+					Email = SelectedSender.Email,
+					Password = PasswordCoding.Encrypt(SelectedSender.Password)
+				});
+				Messenger.Default.Send(SelectedSender);
+				Senders = new ObservableCollection<Sender>(_senderService.GetAll().Select(x => new Sender()
+				{
+					Id = x.Id,
+					Email = x.Email,
+					Password = PasswordCoding.Decrypt(x.Password)
+				}));
+
+			}
 		}
 
 		private async Task DeleteSender()
 		{
-			if(SelectedSender != null)
+			if (SelectedSender != null)
 			{
-				using (var dbSender = new BaseRepo<Sender>())
-				{
-					dbSender.Delete(SelectedSender);
-					Senders.Remove(SelectedSender);
-					Messenger.Default.Send(SelectedSender);
-				}
-			}			
+				_senderService.Delete(SelectedSender);
+				Messenger.Default.Send(SelectedSender);
+				Senders.Remove(SelectedSender);
+			}
 		}
 	}
 }

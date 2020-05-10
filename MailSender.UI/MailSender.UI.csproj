@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="AsyncAwaitBestPractices.MVVM" Version="4.1.0" />
+    <PackageReference Include="Autofac" Version="5.1.4" />
     <PackageReference Include="CommonServiceLocator" Version="2.0.5" />
     <PackageReference Include="MaterialDesignColors" Version="1.2.3" />
     <PackageReference Include="MaterialDesignThemes" Version="3.1.0" />
@@ -24,17 +25,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MailSsender.Dal\MailSender.DAL.csproj" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
+    <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Resources\contactEdit.png" />
     <Resource Include="Resources\shedulerAdd.png" />
     <Resource Include="Resources\smtpEdit.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="ViewModel\Support\" />
   </ItemGroup>
 
 </Project>

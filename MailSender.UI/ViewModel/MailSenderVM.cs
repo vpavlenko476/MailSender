@@ -1,18 +1,16 @@
 ﻿using AsyncAwaitBestPractices.MVVM;
+using Domain;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
 using GalaSoft.MvvmLight.Messaging;
-using MailSender.DAL.Exceptions;
-using MailSender.DAL.Models;
-using MailSender.DAL.Repos;
-using MailSender.DAL.Services;
 using MailSender.UI.Views.Behaviors;
 using MailSender.UI.Views.Services;
 using MaterialDesignThemes.Wpf;
+using Services.Abstract;
+using Services.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Configuration;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
@@ -21,10 +19,13 @@ namespace MailSender.UI.ViewModel
 {
 	public class MailSenderVM : ViewModelBase
 	{
+		private readonly IRecipientService _recipientService;
+		private readonly IHostService _hostService;
+		private readonly ISenderService _senderService;
 		private IWindowService windowService;
 		private IAsyncCommand _sendEmailCommand;
 		private IAsyncCommand _sendShedullerCommand;
-		private IEmailSendService _emailSendService;
+		private IMessageSendService _emailSendService;
 		private string _messageBody;
 		private string _messageTitle;
 		private bool _isBusy;
@@ -44,11 +45,19 @@ namespace MailSender.UI.ViewModel
 		private RelayCommand _openSmtpEditWindowCommand;
 		private RelayCommand _openRecipientEditWindowCommand;
 		private SnackbarMessageQueue _snackBarMessageQueue;
-		public MailSenderVM(IEmailSendService service, IWindowService openWindowService)
+		public MailSenderVM
+			(IRecipientService recService, 
+			IHostService hostService, 
+			ISenderService senderService,
+			IMessageSendService emailSendService, 
+			IWindowService openWindowService)
 		{
-			_emailSendService = service;
+			_senderService = senderService;
+			_hostService = hostService;
+			_recipientService = recService;
+			_emailSendService = emailSendService;
 			windowService = openWindowService;
-			Messenger.Default.Register<Sender>(this, x => EditSendersList(x));
+			Messenger.Default.Register<Sender>(this, x => EditSendersList(x));			
 			Messenger.Default.Register<Host>(this, x => EditHostList(x));
 			Messenger.Default.Register<Recipient>(this, x => EditRecipientList(x));
 			MyMessageQueue = new SnackbarMessageQueue(new TimeSpan(0, 0, 3));
@@ -177,14 +186,11 @@ namespace MailSender.UI.ViewModel
 		{
 			get
 			{
-				using (var sender = new BaseRepo<Sender>())
+				if (_sendersEmails == null)
 				{
-					if (_sendersEmails == null)
-					{
-						_sendersEmails = new ObservableCollection<string>(sender.GetAll().Select(x => x.Email));
-					}
-					return _sendersEmails;
+					_sendersEmails = new ObservableCollection<string>(_senderService.GetAll().Select(x => x.Email));
 				}
+				return _sendersEmails;
 			}
 			set
 			{
@@ -199,14 +205,12 @@ namespace MailSender.UI.ViewModel
 		{
 			get
 			{
-				using (var recipient = new BaseRepo<Recipient>())
+
+				if (_recipients == null)
 				{
-					if (_recipients == null)
-					{
-						_recipients = new ObservableCollection<Recipient>(recipient.GetAll());
-					}
-					return _recipients;
+					_recipients = new ObservableCollection<Recipient>(_recipientService.GetAll());
 				}
+				return _recipients;
 			}
 			set
 			{
@@ -223,10 +227,7 @@ namespace MailSender.UI.ViewModel
 			{
 				if (_smtpServers == null)
 				{
-					using (var hosts = new BaseRepo<Host>())
-					{
-						_smtpServers = new ObservableCollection<string>(hosts.GetAll().Select(x => x.Server));
-					}
+					_smtpServers = new ObservableCollection<string>(_hostService.GetAll().Select(x => x.Server));
 				}
 				return _smtpServers;
 			}
@@ -277,10 +278,7 @@ namespace MailSender.UI.ViewModel
 		{
 			if (!string.IsNullOrWhiteSpace(_searchField))
 			{
-				using (var recipient = new BaseRepo<Recipient>())
-				{
-					Recipients = new ObservableCollection<Recipient>(recipient.GetAll().Where(x => x.Email.Contains(_searchField)));
-				}
+				Recipients = new ObservableCollection<Recipient>(_recipientService.GetAll().Where(x => x.Email.Contains(_searchField)));
 			}
 		}
 
@@ -352,61 +350,26 @@ namespace MailSender.UI.ViewModel
 		}
 
 		public RelayCommand OpenSendersEditWindowCommand => _openSendersEditWindowCommand ?? (_openSendersEditWindowCommand = new RelayCommand
-			(() => windowService.showWindow(new SendersVM())));
+			(() => windowService.showWindow(new SendersVM(_senderService))));
 
 		public RelayCommand OpenSmtpEditWindowCommand => _openSmtpEditWindowCommand ?? (_openSmtpEditWindowCommand = new RelayCommand
-		(() => windowService.showWindow(new SmtpVM())));
+		(() => windowService.showWindow(new HostVM(_hostService))));
 
 		public RelayCommand OpenRecipientEditWindowCommand => _openRecipientEditWindowCommand ?? (_openRecipientEditWindowCommand = new RelayCommand
-		(() => windowService.showWindow(new RecipientsVM())));
+		(() => windowService.showWindow(new RecipientsVM(_recipientService))));
 
 		public void EditSendersList(Sender editedSender)
 		{
-			using (var dbSender = new BaseRepo<Sender>())
-			{
-				SendersEmails = new ObservableCollection<string>(dbSender.GetAll().Select(x => x.Email));
-			}
-
-			//if (_senders == null)
-			//{
-			//	using (var dbSender = new BaseRepo<Sender>())
-			//	{
-			//		_senders = new ObservableCollection<Sender>(dbSender.GetAll());
-			//	}
-			//}
-
-			//var edited = _senders.Where(x => x.Id == editedSender.Id).FirstOrDefault();
-			//var deleted = _senders.Where(x => Equals(x, editedSender)).FirstOrDefault();
-			//if (edited != null)
-			//{
-			//	_senders.Remove(edited);
-			//	_senders.Add(editedSender);
-			//}
-			//else if(deleted!=null)
-			//{
-			//	_senders.Remove(deleted);
-			//}
-			//else
-			//{
-			//	_senders.Add(editedSender);
-			//}			
-			//_sendersEmails = new ObservableCollection<string>(_senders.Select(x => x.Email));
-			//SendersEmails = _sendersEmails;			
+			SendersEmails = new ObservableCollection<string>(_senderService.GetAll().Select(x => x.Email));
 		}
 
 		public void EditHostList(Host editedHost)
 		{
-			using (var dbHost = new BaseRepo<Host>())
-			{
-				SmtpServers = new ObservableCollection<string>(dbHost.GetAll().Select(x => x.Server));
-			}
+			SmtpServers = new ObservableCollection<string>(_hostService.GetAll().Select(x => x.Server));
 		}
 		public void EditRecipientList(Recipient editedRecipient)
 		{
-			using (var dbRecipient = new BaseRepo<Recipient>())
-			{
-				Recipients = new ObservableCollection<Recipient>(dbRecipient.GetAll());
-			}
+			Recipients = new ObservableCollection<Recipient>(_recipientService.GetAll());
 		}
 	}
 }

@@ -1,26 +1,29 @@
 ﻿using AsyncAwaitBestPractices.MVVM;
+using Domain;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Messaging;
-using MailSender.DAL.Models;
-using MailSender.DAL.Repos;
-using System;
-using System.Collections.Generic;
+using Services.Abstract;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace MailSender.UI.ViewModel
 {
 	public class RecipientsVM : ViewModelBase
-	{
+	{		
+		private readonly IRecipientService _recipientService;
 		private ObservableCollection<Recipient> _recipients;
 		private string _emailToCreate;
-		private string _nameToCreate;		
+		private string _nameToCreate;
 		private IAsyncCommand _addRecipient;
 		private IAsyncCommand _editRecipient;
 		private IAsyncCommand _deleteRecipient;
+
+		public RecipientsVM(IRecipientService service)
+		{
+			_recipientService = service;
+		}
 
 		/// <summary>
 		/// Получатели 
@@ -31,10 +34,7 @@ namespace MailSender.UI.ViewModel
 			{
 				if (_recipients == null)
 				{
-					using (var dbRecipient = new BaseRepo<Recipient>())
-					{
-						_recipients = new ObservableCollection<Recipient>(dbRecipient.GetAll());
-					}
+					_recipients = new ObservableCollection<Domain.Recipient>(_recipientService.GetAll());
 				}
 				return _recipients;
 			}
@@ -55,7 +55,7 @@ namespace MailSender.UI.ViewModel
 		public string EmailToCreate
 		{
 			get { return _emailToCreate; }
-			set 
+			set
 			{
 				if (Regex.IsMatch(value, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
 				{
@@ -71,7 +71,7 @@ namespace MailSender.UI.ViewModel
 		public string NameToCreate
 		{
 			get { return _nameToCreate; }
-			set 
+			set
 			{
 				if (!string.IsNullOrEmpty(value))
 				{
@@ -80,7 +80,7 @@ namespace MailSender.UI.ViewModel
 				else _nameToCreate = null;
 			}
 		}
-		
+
 		/// <summary>
 		/// Добавление поьзователя
 		/// </summary>
@@ -116,43 +116,33 @@ namespace MailSender.UI.ViewModel
 
 		private async Task Add()
 		{
-			if (EmailToCreate != null && NameToCreate!=null)
+			if (EmailToCreate != null && NameToCreate != null)
 			{
-				using (var dbRecipient = new BaseRepo<Recipient>())
-				{
-					var newRecipient = new Recipient() { Email = EmailToCreate, Name = NameToCreate };
-					dbRecipient.Add(newRecipient);
-					Recipients.Add(newRecipient);
-					Messenger.Default.Send(newRecipient);
-				}
-			}			
+				var newRecipient = new Recipient() { Email = EmailToCreate, Name = NameToCreate };
+				_recipientService.Add(newRecipient);
+				Recipients = new ObservableCollection<Recipient>(_recipientService.GetAll());
+				Messenger.Default.Send(newRecipient);
+			}
 		}
 
 		private async Task Edit()
 		{
-			if(SelectedRecipient!=null)
+			if (SelectedRecipient != null)
 			{
-				using (var dbRecipient = new BaseRepo<Recipient>())
-				{
-					dbRecipient.Save(SelectedRecipient);
-					Recipients.Remove(Recipients.Where(x => x.Id == SelectedRecipient.Id).FirstOrDefault());
-					Recipients = new ObservableCollection<Recipient>(dbRecipient.GetAll());
-					Messenger.Default.Send(SelectedRecipient);
-				}
-			}			
+				_recipientService.Edit(SelectedRecipient);
+				Messenger.Default.Send(SelectedRecipient);							
+				Recipients = new ObservableCollection<Recipient>(_recipientService.GetAll());				
+			}
 		}
 
 		private async Task Delete()
 		{
-			if(SelectedRecipient!=null)
+			if (SelectedRecipient != null)
 			{
-				using (var RecipientHost = new BaseRepo<Recipient>())
-				{
-					RecipientHost.Delete(SelectedRecipient);
-					Recipients.Remove(Recipients.Where(x => x.Id == SelectedRecipient.Id).FirstOrDefault());
-					Messenger.Default.Send(SelectedRecipient);
-				}
-			}			
+				_recipientService.Delete(SelectedRecipient);
+				Recipients.Remove(Recipients.Where(x => x.Id == SelectedRecipient.Id).FirstOrDefault());
+				Messenger.Default.Send(SelectedRecipient);
+			}
 		}
 	}
 }

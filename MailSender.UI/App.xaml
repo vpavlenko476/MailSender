@@ -14,7 +14,7 @@
             <DataTemplate DataType="{x:Type vm:SendersVM}">
                 <vw:SendersEdit/>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:SmtpVM}">
+            <DataTemplate DataType="{x:Type vm:HostVM}">
                 <smtp:SmtpEdit/>
             </DataTemplate>
             <DataTemplate DataType="{x:Type vm:RecipientsVM}">
@@ -23,7 +23,7 @@
             <DataTemplate DataType="{x:Type vm:WarningsVW}">
                 <vw:Warning/>
             </DataTemplate>
-            <local:ViewModelLocator x:Key="ViewModelLocator"/>
+            <local:ViewModelLocator x:Key="ViewModelLocator"/>            
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />

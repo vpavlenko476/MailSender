@@ -1,6 +1,5 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Messaging;
-using MailSender.DAL.Exceptions;
 using System;
 
 namespace MailSender.UI.ViewModel

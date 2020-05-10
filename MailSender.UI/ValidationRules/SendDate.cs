@@ -11,7 +11,7 @@ namespace MailSender.UI.ValidationRules
 		public override ValidationResult Validate(object value, CultureInfo cultureInfo)
 		{
 			if (!(value is DateTime date)) return new ValidationResult(false, "Некорректные данные");
-			if (date<DateTime.Now) return new ValidationResult(false, "Нельзя выбрать прошедшую дату");
+			if (date.Date<DateTime.Now.Date) return new ValidationResult(false, "Нельзя выбрать прошедшую дату");
 			
 			return ValidationResult.ValidResult;
 		}

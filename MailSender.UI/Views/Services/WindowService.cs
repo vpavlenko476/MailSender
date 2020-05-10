@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
+﻿using System.Windows;
 
 namespace MailSender.UI.Views.Services
 {
-	class WindowService : IWindowService
+	public class WindowService : IWindowService
 	{
 		public void showWindow(object viewModel)
 		{
