@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain;
+using System;
 using System.Collections.Generic;
 using System.Net.Mail;
 using System.Threading.Tasks;
@@ -10,6 +11,12 @@ namespace Services.Abstract
 	/// </summary>
 	public interface IMessageSendService
 	{
+		/// <summary>
+		/// Получить список всех отправленных и запланированных писем
+		/// </summary>
+		/// <returns></returns>
+		List<Message> GetMessages();
+
 		/// <summary>
 		/// Отправить письмо сейчас
 		/// </summary>
@@ -23,5 +30,15 @@ namespace Services.Abstract
 		/// <param name="client">Smtp клиент</param>
 		/// <param name="message">Объект письма</param>		
 		void SendEmailScheduler(string smtpServer, IEnumerable<MailMessage> mailMessages, DateTime date, DateTime time);
+
+		/// <summary>
+		/// Уведомлении о запланированности письма
+		/// </summary>
+		event Action messageScheduled;
+
+		/// <summary>
+		/// Уведомлении об отправки письма
+		/// </summary>
+		event Action messageSend;
 	}
 }

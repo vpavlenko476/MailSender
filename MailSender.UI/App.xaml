@@ -19,10 +19,7 @@
             </DataTemplate>
             <DataTemplate DataType="{x:Type vm:RecipientsVM}">
                 <vw:RecipientEdit/>
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:WarningsVW}">
-                <vw:Warning/>
-            </DataTemplate>
+            </DataTemplate>            
             <local:ViewModelLocator x:Key="ViewModelLocator"/>            
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml" />

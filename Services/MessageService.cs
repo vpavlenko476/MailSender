@@ -21,11 +21,12 @@ namespace Services
 		IBaseRepo<RecipientEntity> _recipientRepository;
 		IBaseRepo<HostEntity> _hostRepository;
 		IBaseRepo<Recipient2MessageEntity> _recipient2MessageRepository;
-		public Action messageScheduled;
+		public event Action messageScheduled;
+		public event Action messageSend;
 
 		public MessageService
-			(IBaseRepo<MessageEntity> messageRepository, 
-			IBaseRepo<SenderEntity> senderRepository, 
+			(IBaseRepo<MessageEntity> messageRepository,
+			IBaseRepo<SenderEntity> senderRepository,
 			IBaseRepo<RecipientEntity> recRepository,
 			IBaseRepo<HostEntity> hostRepository,
 			IBaseRepo<Recipient2MessageEntity> recipient2MessageRepository)
@@ -36,10 +37,11 @@ namespace Services
 			_hostRepository = hostRepository;
 			_recipient2MessageRepository = recipient2MessageRepository;
 		}
+
 		///<inheritdoc cref="IMessageSendService.SendEmail(SmtpClient, Message)"/>
 		public async Task SendEmailNow(string smtpServer, IEnumerable<MailMessage> mailMessages, bool isSheduled = false)
 		{
-			if(isSheduled==false)
+			if (isSheduled == false)
 			{
 				try
 				{
@@ -49,33 +51,23 @@ namespace Services
 				{
 					throw ex;
 				}
-			}			
-			
+			}
+
 			var sender = _senderRepository.GetAll().Where(x => x.Email == mailMessages.FirstOrDefault().From.Address).FirstOrDefault().ToDomain();
 			var allRecipients = _recipientRepository.GetAll();
 			var messageRecipients = new List<Recipient>();
 
-			using (var client = new SmtpClient())
+			using (var client = GetSmtpClient(sender, smtpServer))
 			{
-				client.Host = smtpServer;
-				client.Port = _hostRepository.GetAll()
-					.Where(x => x.Server == smtpServer)
-					.Select(x => x.Port)
-					.FirstOrDefault();
-				client.EnableSsl = true;
-				client.DeliveryMethod = SmtpDeliveryMethod.Network;
-				client.UseDefaultCredentials = false;
-
-				client.Credentials = new NetworkCredential(sender.Email, PasswordCoding.Decrypt(sender.Password));				
 				foreach (var mail in mailMessages)
 				{
 					var recipient = allRecipients.Where(x => x.Email == mail.To.FirstOrDefault().Address).FirstOrDefault();
 					messageRecipients.Add(recipient.ToDomain());
-					await client.SendMailAsync(mail);
+					await client.SendMailAsync(mail);					
 				}
 			}
 
-			if(isSheduled==false)
+			if (isSheduled == false)
 			{
 				var sendedMessage = new Message()
 				{
@@ -108,8 +100,8 @@ namespace Services
 			catch (EmailSendServiceException ex)
 			{
 				throw ex;
-			}						
-			
+			}
+
 			var sheduledMessage = new Message()
 			{
 				SenderId = _senderRepository.GetAll().Where(x => x.Email == mailMessages.FirstOrDefault().From.Address).FirstOrDefault().Id,
@@ -119,28 +111,41 @@ namespace Services
 				SendDateTime = null
 			};
 			_messageRepository.Add(sheduledMessage.ToEntity());
-			//messageScheduled.Invoke();
 
-			var timer = new System.Timers.Timer(1000)
+			messageScheduled.Invoke();
+
+			var timer = new System.Timers.Timer(60000)
 			{
 				Enabled = true
 			};
-			timer.Elapsed += (sender, args) => OnTimeoutAsync2(sender, smtpServer, mailMessages, scheduledSendDateTime);
+			timer.Elapsed += async (sender, args) => await OnTimeoutAsync(sender, smtpServer, mailMessages, scheduledSendDateTime);
 			timer.Start();
-
 		}
 
-		private void OnTimeoutAsync2(Object source, string smtpServer, IEnumerable<MailMessage> mailMessages, DateTime scheduledSendDateTime)
+		///<inheritdoc cref="IMessageSendService.GetMessages()"/>
+		public List<Message> GetMessages()
+		{			
+			return _messageRepository.GetAll().Select(x => x.ToDomain()).ToList();
+		}
+
+		#region private methods		
+		private SmtpClient GetSmtpClient(Sender sender, string smtpServer)
 		{
-			if (scheduledSendDateTime.ToShortTimeString() == DateTime.Now.ToShortTimeString())
-			{				
-				var sendedEmail = _messageRepository.GetAll().Where(x => x.ScheduledSendDateTime == scheduledSendDateTime).FirstOrDefault().ToDomain();
-				sendedEmail.SendDateTime = DateTime.Now;
-				sendedEmail.ScheduledSendDateTime = null;
-				_messageRepository.Save(sendedEmail.ToEntity());
-			}
+			return new SmtpClient()
+			{
+				Host = smtpServer,
+				Port = _hostRepository.GetAll()
+								.Where(x => x.Server == smtpServer)
+								.Select(x => x.Port)
+								.FirstOrDefault(),
+				EnableSsl = true,
+				DeliveryMethod = SmtpDeliveryMethod.Network,
+				UseDefaultCredentials = false,
+				Credentials = new NetworkCredential(sender.Email, PasswordCoding.Decrypt(sender.Password))
+			};
 		}
-		private async void OnTimeoutAsync(Object source, string smtpServer, IEnumerable<MailMessage> mailMessages, DateTime scheduledSendDateTime)
+
+		private async Task OnTimeoutAsync(Object source, string smtpServer, IEnumerable<MailMessage> mailMessages, DateTime scheduledSendDateTime)
 		{
 			if (scheduledSendDateTime.ToShortTimeString() == DateTime.Now.ToShortTimeString())
 			{
@@ -149,26 +154,28 @@ namespace Services
 				sendedEmail.SendDateTime = DateTime.Now;
 				sendedEmail.ScheduledSendDateTime = null;
 				_messageRepository.Save(sendedEmail.ToEntity());
+				messageSend.Invoke();
 			}
 		}
 
 		private void DataValidate(string smtpServer, IEnumerable<MailMessage> mailMessages)
 		{
+			var message = mailMessages.First();
 			if (smtpServer == null) throw new EmailSendServiceException("Укажите smtp-сервер");
 			if (mailMessages.Count() == 0) throw new EmailSendServiceException("Укажите отправителя/получателя");
-			var message = mailMessages.First();
 			if (message.From == null) throw new EmailSendServiceException("Укажите отправителя");
-			else if (message.To == null) throw new EmailSendServiceException("Укажите Получателя");
+			if (message.To == null) throw new EmailSendServiceException("Укажите Получателя");
 		}
 
 		private void DataValidate(string smtpServer, IEnumerable<MailMessage> mailMessages, DateTime date)
 		{
+			var message = mailMessages.First();
 			if (smtpServer == null) throw new EmailSendServiceException("Укажите smtp-сервер");
 			if (mailMessages.Count() == 0) throw new EmailSendServiceException("Укажите отправителя/получателя");
-			var message = mailMessages.First();
 			if (message.From == null) throw new EmailSendServiceException("Укажите отправителя");
 			if (message.To == null) throw new EmailSendServiceException("Укажите Получателя");
 			if (date.Date < DateTime.Now.Date) throw new EmailSendServiceException("Вы указали дату в прошлом");
-		}
+		}		
+		#endregion
 	}
 }

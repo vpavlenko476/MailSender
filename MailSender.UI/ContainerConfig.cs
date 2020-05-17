@@ -15,8 +15,7 @@ namespace MailSender.UI
 		private static ContainerBuilder _rootScope;
 		
 		public ContainerConfig()
-		{
-			
+		{			
 			var builder = new ContainerBuilder();
 			builder.RegisterType<WindowService>().As<IWindowService>();
 			builder.RegisterType<MailSenderContext>();
@@ -28,8 +27,7 @@ namespace MailSender.UI
 			builder.RegisterType<MailSenderVM>();
 			builder.RegisterType<SendersVM>();
 			builder.RegisterType<HostVM>();
-			builder.RegisterType<RecipientsVM>();
-			builder.RegisterType<WarningsVW>();
+			builder.RegisterType<RecipientsVM>();			
 
 			builder.RegisterAssemblyTypes(Assembly.Load(nameof(Services)))
 				.Where(c => !(c.Namespace.Contains("Exceptions")))
@@ -50,8 +48,7 @@ namespace MailSender.UI
 			builder.RegisterType<MailSenderVM>();
 			builder.RegisterType<SendersVM>();
 			builder.RegisterType<HostVM>();
-			builder.RegisterType<RecipientsVM>();
-			builder.RegisterType<WarningsVW>();
+			builder.RegisterType<RecipientsVM>();			
 
 			builder.RegisterAssemblyTypes(Assembly.Load(nameof(Services)))
 				.Where(c => !(c.Namespace.Contains("Exceptions")))
@@ -81,10 +78,6 @@ namespace MailSender.UI
 		public RecipientsVM RecipientsVM
 		{
 			get { return _rootScope.Build().Resolve<RecipientsVM>(); }
-		}
-		public WarningsVW WarningsVW
-		{
-			get { return _rootScope.Build().Resolve<WarningsVW>(); }
 		}		
 	}
 }

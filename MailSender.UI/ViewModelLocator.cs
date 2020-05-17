@@ -38,9 +38,7 @@ namespace MailSender.UI
 			SimpleIoc.Default.Register<MailSenderVM>();
 			SimpleIoc.Default.Register<SendersVM>();
 			SimpleIoc.Default.Register<HostVM>();
-			SimpleIoc.Default.Register<RecipientsVM>();			
-			SimpleIoc.Default.Register<WarningsVW>();
-
+			SimpleIoc.Default.Register<RecipientsVM>();	
 		}
 
 		public MailSenderVM MailSenderVM
@@ -60,11 +58,6 @@ namespace MailSender.UI
 		public RecipientsVM RecipientsVM
 		{
 			get { return SimpleIoc.Default.GetInstance<RecipientsVM>(); }
-		}
-		public WarningsVW WarningsVW
-		{
-			get { return SimpleIoc.Default.GetInstance<WarningsVW>(); }
-		}
-
+		}	
 	}
 }

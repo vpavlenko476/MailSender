@@ -4,8 +4,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:rules="clr-namespace:MailSender.UI.ValidationRules"
-             xmlns:local="clr-namespace:MailSender.UI.Views"
+             xmlns:rules="clr-namespace:MailSender.UI.ValidationRules"             
              xmlns:i="clr-namespace:Microsoft.Xaml.Behaviors;assembly=Microsoft.Xaml.Behaviors"
              xmlns:customBenavior="clr-namespace:MailSender.UI.Views.Behaviors"
              mc:Ignorable="d" 
@@ -18,7 +17,7 @@
              Background="{DynamicResource MaterialDesignPaper}"
              FontFamily="{DynamicResource MaterialDesignFont}"
              DataContext="{Binding MailSenderVM, Source={StaticResource ViewModelLocator}}">
-    <Grid>  
+    <Grid>
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabControl}">
             <TabItem Header="Группа рассылки">
                 <StackPanel>
@@ -81,33 +80,46 @@
                             <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="Auto"/>
                             <DataGridTextColumn Header="Почта" Binding="{Binding Email}" Width="Auto"/>
                         </DataGrid.Columns>
-                    </DataGrid>                    
+                    </DataGrid>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Планировщик">
-                <StackPanel>
-                    <Viewbox Name="vbSchedul" Width="250" Height="280" HorizontalAlignment="Left">
-                        <Calendar Name ="cldSchedulDateTimes">
-                            <Calendar.SelectedDate>
-                                <Binding Path="SendDate" NotifyOnValidationError="True" ValidatesOnDataErrors="True" UpdateSourceTrigger="PropertyChanged">
-                                    <Binding.ValidationRules>
-                                        <ExceptionValidationRule/>
-                                        <rules:SendDate/>
-                                    </Binding.ValidationRules>
-                                </Binding>
-                            </Calendar.SelectedDate>
-                        </Calendar>
-                    </Viewbox>
-                    <materialDesign:TimePicker Width="220" HorizontalAlignment="Left" Margin="2,0,0,2" SelectedTime="{Binding SendTime}"/>
-                    <Button Command="{Binding SendEmailShedullerCommand}" Width="220" HorizontalAlignment="Left" Margin="0,2,0,2" 
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="125*"/>
+                        <ColumnDefinition Width="282*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <Viewbox Name="vbSchedul" Width="250" Height="280" HorizontalAlignment="Left">
+                            <Calendar Name ="cldSchedulDateTimes">
+                                <Calendar.SelectedDate>
+                                    <Binding Path="SendDate" NotifyOnValidationError="True" ValidatesOnDataErrors="True" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <ExceptionValidationRule/>
+                                            <rules:SendDate/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </Calendar.SelectedDate>
+                            </Calendar>
+                        </Viewbox>
+                        <materialDesign:TimePicker Width="220" HorizontalAlignment="Left" Margin="2,0,0,2" SelectedTime="{Binding SendTime}"/>
+                        <Button Command="{Binding SendEmailShedullerCommand}" Width="220" HorizontalAlignment="Left" Margin="0,2,0,2" 
                             Style="{StaticResource MaterialDesignFlatButton}">
-                        Отправить запланированно
-                    </Button>
-                    <Button Width="220" HorizontalAlignment="Left" Margin="0,2,0,2" Command="{Binding SendEmailNowCommand}"
+                            Отправить запланированно
+                        </Button>
+                        <Button Width="220" HorizontalAlignment="Left" Margin="0,2,0,2" Command="{Binding SendEmailNowCommand}"
                             Style="{StaticResource MaterialDesignFlatButton}">
-                        Отправить сразу
-                    </Button>
-                </StackPanel>
+                            Отправить сразу
+                        </Button>
+                    </StackPanel>
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding SheduledMessages}" IsReadOnly="True" Grid.Column="1">                        
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Запланировано на" Binding="{Binding ScheduledSendDateTime}" Width="Auto"/>                            
+                            <DataGridTextColumn Header="Тема" Binding="{Binding Title}" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
 
 
             </TabItem>
@@ -145,9 +157,9 @@
                     </TextBox>
                 </StackPanel>
             </TabItem>
-            <TabItem Header="Статистика">Test</TabItem>            
+            <TabItem Header="Статистика">Test</TabItem>
         </TabControl>
-        <materialDesign:Snackbar MessageQueue="{Binding MyMessageQueue}">           
+        <materialDesign:Snackbar MessageQueue="{Binding MyMessageQueue}">
         </materialDesign:Snackbar>
     </Grid>
 </UserControl>

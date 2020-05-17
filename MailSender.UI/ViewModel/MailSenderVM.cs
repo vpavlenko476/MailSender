@@ -22,10 +22,10 @@ namespace MailSender.UI.ViewModel
 		private readonly IRecipientService _recipientService;
 		private readonly IHostService _hostService;
 		private readonly ISenderService _senderService;
-		private IWindowService windowService;
+		private readonly IWindowService _windowService;
 		private IAsyncCommand _sendEmailCommand;
 		private IAsyncCommand _sendShedullerCommand;
-		private IMessageSendService _emailSendService;
+		private IMessageSendService _mesageSendService;
 		private string _messageBody;
 		private string _messageTitle;
 		private bool _isBusy;
@@ -41,26 +41,39 @@ namespace MailSender.UI.ViewModel
 		private ObservableCollection<Recipient> _recipients;
 		private ObservableCollection<Sender> _senders;
 		private ObservableCollection<string> _sendersEmails;
+		private ObservableCollection<Message> _sheduledMessages;
 		private RelayCommand _openSendersEditWindowCommand;
 		private RelayCommand _openSmtpEditWindowCommand;
 		private RelayCommand _openRecipientEditWindowCommand;
 		private SnackbarMessageQueue _snackBarMessageQueue;
 		public MailSenderVM
-			(IRecipientService recService, 
-			IHostService hostService, 
+			(IRecipientService recService,
+			IHostService hostService,
 			ISenderService senderService,
-			IMessageSendService emailSendService, 
+			IMessageSendService emailSendService,
 			IWindowService openWindowService)
 		{
 			_senderService = senderService;
 			_hostService = hostService;
 			_recipientService = recService;
-			_emailSendService = emailSendService;
-			windowService = openWindowService;
-			Messenger.Default.Register<Sender>(this, x => EditSendersList(x));			
+			_mesageSendService = emailSendService;
+			_windowService = openWindowService;
+			Messenger.Default.Register<Sender>(this, x => EditSendersList(x));
 			Messenger.Default.Register<Host>(this, x => EditHostList(x));
 			Messenger.Default.Register<Recipient>(this, x => EditRecipientList(x));
 			MyMessageQueue = new SnackbarMessageQueue(new TimeSpan(0, 0, 3));
+			_mesageSendService.messageSend += _mesageSendService_messageSend;
+			_mesageSendService.messageScheduled += _mesageSendService_messageScheduled;
+		}
+
+		private void _mesageSendService_messageScheduled()
+		{
+			SheduledMessages = new ObservableCollection<Message>(_mesageSendService.GetMessages().Where(x=>x.SendDateTime==null).OrderBy(x=>x.ScheduledSendDateTime));
+		}
+
+		private void _mesageSendService_messageSend()
+		{
+			SheduledMessages = new ObservableCollection<Message>(_mesageSendService.GetMessages().Where(x => x.SendDateTime == null).OrderBy(x => x.ScheduledSendDateTime));
 		}
 
 		public SnackbarMessageQueue MyMessageQueue
@@ -105,8 +118,14 @@ namespace MailSender.UI.ViewModel
 		/// </summary>
 		public string SmtpServer
 		{
-			get { return _smtpServer; }
-			set { Set(ref _smtpServer, value); }
+			get
+			{
+				return _smtpServer;
+			}
+			set
+			{
+				Set(ref _smtpServer, value);
+			}
 		}
 
 		/// <summary>
@@ -157,7 +176,10 @@ namespace MailSender.UI.ViewModel
 		public DateTime SendDate
 		{
 			get { return _sendDate; }
-			set { Set(ref _sendDate, value); }
+			set
+			{
+				Set(ref _sendDate, value);
+			}
 		}
 
 		/// <summary>
@@ -178,6 +200,20 @@ namespace MailSender.UI.ViewModel
 			set { Set(ref _isBusy, value); }
 		}
 
+		/// <summary>
+		/// Список запланированных писем
+		/// </summary>
+		public ObservableCollection<Message> SheduledMessages
+		{
+			get
+			{	
+				return _sheduledMessages;
+			}
+			set
+			{
+				Set(ref _sheduledMessages, value);
+			}
+		}
 
 		/// <summary>
 		/// Список эл.почт отправителей
@@ -205,7 +241,6 @@ namespace MailSender.UI.ViewModel
 		{
 			get
 			{
-
 				if (_recipients == null)
 				{
 					_recipients = new ObservableCollection<Recipient>(_recipientService.GetAll());
@@ -274,7 +309,7 @@ namespace MailSender.UI.ViewModel
 		}
 
 		// TODO: Вынести обращение к бд из метода, в методе оставить работу с имеющейся коллекцией
-		public void SerarchRecipient()
+		private void SerarchRecipient()
 		{
 			if (!string.IsNullOrWhiteSpace(_searchField))
 			{
@@ -283,54 +318,36 @@ namespace MailSender.UI.ViewModel
 		}
 
 
-		public async Task SendEmailShedullerAsync()
+		private async Task SendEmailShedullerAsync()
 		{
-			IsBusy = true;
 			var messages = GetMessages();
 			try
 			{
-				await Task.Run(() => _emailSendService.SendEmailScheduler(
+				MyMessageQueue.Enqueue($"Письмо будет отправлено {SendDate.ToShortDateString()} в {SendTime.ToShortTimeString()}");
+				await Task.Run(() => _mesageSendService.SendEmailScheduler(
 					 SmtpServer,
 					 messages,
 					 SendDate,
 					 SendTime));
-				MyMessageQueue.Enqueue($"Письмо будет отправлено {SendDate.ToShortDateString()} в {SendTime.ToShortTimeString()}");
 			}
 			catch (EmailSendServiceException ex)
 			{
 				MyMessageQueue.Enqueue(ex.Message);
 			}
-			catch (Exception ex)
-			{
-				windowService.showWindow(new WarningsVW());
-				Messenger.Default.Send(ex);
-			}
-
-			IsBusy = false;
 		}
 
-		public async Task SendEmailNowAsync()
+		private async Task SendEmailNowAsync()
 		{
-			IsBusy = true;
-
 			var messages = GetMessages();
-
 			try
 			{
-				await _emailSendService.SendEmailNow(SmtpServer, messages);
+				await _mesageSendService.SendEmailNow(SmtpServer, messages);
 				MyMessageQueue.Enqueue("Письмо отправлено");
 			}
 			catch (EmailSendServiceException ex)
 			{
 				MyMessageQueue.Enqueue(ex.Message);
 			}
-			catch (Exception ex)
-			{
-				windowService.showWindow(new WarningsVW());
-				Messenger.Default.Send(ex);
-			}
-
-			IsBusy = false;
 		}
 
 		private IEnumerable<MailMessage> GetMessages()
@@ -350,24 +367,24 @@ namespace MailSender.UI.ViewModel
 		}
 
 		public RelayCommand OpenSendersEditWindowCommand => _openSendersEditWindowCommand ?? (_openSendersEditWindowCommand = new RelayCommand
-			(() => windowService.showWindow(new SendersVM(_senderService))));
+			(() => _windowService.showWindow(new SendersVM(_senderService))));
 
 		public RelayCommand OpenSmtpEditWindowCommand => _openSmtpEditWindowCommand ?? (_openSmtpEditWindowCommand = new RelayCommand
-		(() => windowService.showWindow(new HostVM(_hostService))));
+		(() => _windowService.showWindow(new HostVM(_hostService))));
 
 		public RelayCommand OpenRecipientEditWindowCommand => _openRecipientEditWindowCommand ?? (_openRecipientEditWindowCommand = new RelayCommand
-		(() => windowService.showWindow(new RecipientsVM(_recipientService))));
+		(() => _windowService.showWindow(new RecipientsVM(_recipientService))));
 
-		public void EditSendersList(Sender editedSender)
+		private void EditSendersList(Sender editedSender)
 		{
 			SendersEmails = new ObservableCollection<string>(_senderService.GetAll().Select(x => x.Email));
 		}
 
-		public void EditHostList(Host editedHost)
+		private void EditHostList(Host editedHost)
 		{
 			SmtpServers = new ObservableCollection<string>(_hostService.GetAll().Select(x => x.Server));
 		}
-		public void EditRecipientList(Recipient editedRecipient)
+		private void EditRecipientList(Recipient editedRecipient)
 		{
 			Recipients = new ObservableCollection<Recipient>(_recipientService.GetAll());
 		}
